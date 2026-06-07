@@ -1,0 +1,7 @@
+--- a/mkspecs/common/gcc-base-unix.conf
++++ b/mkspecs/common/gcc-base-unix.conf
+@@ -10,7 +10,7 @@ QMAKE_LFLAGS_RPATH      = -Wl,-rpath,
+ QMAKE_LFLAGS_RPATHLINK  = -Wl,-rpath-link,
+-QMAKE_LFLAGS_NEW_DTAGS  = -Wl,--enable-new-dtags
++QMAKE_LFLAGS_NEW_DTAGS  =
+ QMAKE_LFLAGS_SONAME     = -Wl,-soname,

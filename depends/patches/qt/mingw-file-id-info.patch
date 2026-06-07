@@ -1,0 +1,12 @@
+--- a/src/corelib/io/qfilesystemengine_win.cpp
++++ b/src/corelib/io/qfilesystemengine_win.cpp
+@@ -631,8 +631,10 @@ static bool isDirPath(const QString &dirPath, bool *existed)
+ // File ID for Windows up to version 7 and FAT32 drives
+ static inline QByteArray fileId(HANDLE handle)
+ {
++#if !defined(FILE_ID_INFO)
+ typedef struct _FILE_ID_INFO {
+     ULONGLONG VolumeSerialNumber;
+     FILE_ID_128 FileId;
+ } FILE_ID_INFO, *PFILE_ID_INFO;
++#endif
