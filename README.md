@@ -47,7 +47,7 @@ RGM is the first cryptocurrency with **native post-quantum digital signatures** 
 | Block Time | ~1 minute |
 | Initial Reward | 50 RGM |
 | SegWit + PQ Activation | Block 50,000 |
-| AuxPoW Activation | Block 200,000 |
+| AuxPoW Activation | Block 500,000 |
 | First Halving | Block 2,102,400 → 25 RGM |
 
 ## Building
