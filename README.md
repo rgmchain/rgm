@@ -1,89 +1,99 @@
-<h1 align="center">
-<img src="https://raw.githubusercontent.com/dogecoin/dogecoin/master/share/pixmaps/dogecoin256.svg" alt="Dogecoin" width="256"/>
-<br/><br/>
-Dogecoin Core [DOGE, Ð]  
-</h1>
+<div align="center">
+  <h1>RGM Core</h1>
+  <h3>Post-Quantum Cryptocurrency</h3>
+  <p>
+    <strong>ML-DSA-44 (NIST FIPS 204) · Witness Version 2 · AuxPoW Merge Mining</strong>
+  </p>
+  <p>
+    <img src="https://img.shields.io/badge/version-2.0.0-gold" alt="version">
+    <img src="https://img.shields.io/badge/algorithm-ML--DSA--44-blue" alt="algorithm">
+    <img src="https://img.shields.io/badge/standard-NIST%20FIPS%20204-green" alt="standard">
+    <img src="https://img.shields.io/badge/license-MIT-lightgrey" alt="license">
+  </p>
+</div>
 
-**IMPORTANT: Starting August 2024, the `master` branch has become the primary
-integration branch and has become unstable. Please check out a tagged version
-before compiling production binaries.**
+---
 
-For internationalized documentation, see the index at [doc/intl](doc/intl/README.md).
+## What is RGM?
 
-Dogecoin is a community-driven cryptocurrency that was inspired by a Shiba Inu meme. The Dogecoin Core software allows anyone to operate a node in the Dogecoin blockchain networks and uses the Scrypt hashing method for Proof of Work. It is adapted from Bitcoin Core and other cryptocurrencies.
+RGM is the first cryptocurrency with **native post-quantum digital signatures** at the consensus layer. While Bitcoin and Ethereum rely on ECDSA — vulnerable to Shor's algorithm on a quantum computer — RGM uses **ML-DSA-44**, the lattice-based signature algorithm standardized by NIST as **FIPS 204** in August 2024.
 
-For information about the default fees used on the Dogecoin network, please
-refer to the [fee recommendation](doc/fee-recommendation.md).
+> *"Security is not a feature you add later. It is the foundation you build on."*
 
-## Usage 💻
+## Key Features
 
-To start your journey with Dogecoin Core, see the [installation guide](INSTALL.md) and the [getting started](doc/getting-started.md) tutorial.
+- **Post-Quantum Signatures** — ML-DSA-44 (CRYSTALS-Dilithium), NIST FIPS 204
+- **Native Protocol Integration** — PQ at consensus layer, not a layer-2 solution
+- **New Address Type** — `rgm1z…` (witness version 2, bech32)
+- **Backward Compatible** — legacy `R…` and SegWit `rgm1q…` addresses still work
+- **Merge Mining** — AuxPoW with Litecoin and Dogecoin (activates at block 200,000)
+- **Proven Codebase** — fork of Dogecoin 1.14.x with liboqs 0.15.0 integration
 
-The JSON-RPC API provided by Dogecoin Core is self-documenting and can be browsed with `dogecoin-cli help`, while detailed information for each command can be viewed with `dogecoin-cli help <command>`.
+## Algorithm Specifications
 
-### Such ports
+| Parameter | Value |
+|-----------|-------|
+| Algorithm | ML-DSA-44 (CRYSTALS-Dilithium) |
+| Standard | NIST FIPS 204 (August 2024) |
+| Security Level | Level 2 (~128-bit post-quantum) |
+| Signature Size | 2,420 bytes |
+| Public Key Size | 1,312 bytes |
+| Address Format | `rgm1z…` (witness v2, bech32) |
 
-Dogecoin Core by default uses port `22556` for peer-to-peer communication that
-is needed to synchronize the "mainnet" blockchain and stay informed of new
-transactions and blocks. Additionally, a JSONRPC port can be opened, which
-defaults to port `22555` for mainnet nodes. It is strongly recommended to not
-expose RPC ports to the public internet.
+## Network Parameters
 
-| Function | mainnet | testnet | regtest |
-| :------- | ------: | ------: | ------: |
-| P2P      |   22556 |   44556 |   18444 |
-| RPC      |   22555 |   44555 |   18332 |
+| Parameter | Value |
+|-----------|-------|
+| Block Time | ~1 minute |
+| Initial Reward | 50 RGM |
+| SegWit + PQ Activation | Block 50,000 |
+| AuxPoW Activation | Block 200,000 |
+| First Halving | Block 2,102,400 → 25 RGM |
 
-## Ongoing development - Moon plan 🌒
+## Building
 
-Dogecoin Core is an open source and community driven software. The development
-process is open and publicly visible; anyone can see, discuss and work on the
-software.
+### Dependencies
 
-Main development resources:
+- liboqs 0.15.0 (Open Quantum Safe)
+- Qt 5.x (for wallet GUI)
+- Berkeley DB 4.8+
+- OpenSSL
 
-* [GitHub Projects](https://github.com/dogecoin/dogecoin/projects) is used to
-  follow planned and in-progress work for upcoming releases.
-* [GitHub Discussions](https://github.com/dogecoin/dogecoin/discussions) is used
-  to discuss features, planned and unplanned, related to both the development of
-  the Dogecoin Core software, the underlying protocols and the DOGE asset.
+### Linux
 
-### Version strategy
-Version numbers are following ```major.minor.patch``` semantics.
+```bash
+./autogen.sh
+./configure \
+  --with-gui \
+  --with-incompatible-bdb \
+  LIBOQS_CFLAGS="-I/usr/local/include" \
+  LIBOQS_LIBS="-L/usr/local/lib -loqs -lssl -lcrypto"
+make -j$(nproc)
+```
 
-### Branches
-There are 4 types of branches in this repository:
+## Usage
 
-- **master:** Unstable, contains the latest code under development.
-- **maintenance:** Stable, contains the latest version of previous releases,
-  which are still under active maintenance. Format: ```<version>-maint```
-- **development:** Unstable, contains new code for upcoming releases. Format: ```<version>-dev```
-- **archive:** Stable, immutable branches for old versions that no longer change
-  because they are no longer maintained.
+```bash
+# Start daemon
+rgmd -daemon
 
-***Submit your pull requests against `master`***
+# Generate a post-quantum address
+rgm-cli getnewaddress "" pq
+# Returns: rgm1z...
 
-*Maintenance branches are exclusively mutable by release. When a release is*
-*planned, a development branch will be created and commits from master will*
-*be cherry-picked into these by maintainers.*
+# Send to PQ address
+rgm-cli sendtoaddress "rgm1z..." 10.0
+```
 
-## Contributing 🤝
+## References
 
-If you find a bug or experience issues with this software, please report it
-using the [issue system](https://github.com/dogecoin/dogecoin/issues/new?assignees=&labels=bug&template=bug_report.md&title=%5Bbug%5D+).
+- [NIST FIPS 204 — ML-DSA Standard](https://csrc.nist.gov/pubs/fips/204/final)
+- [Open Quantum Safe — liboqs](https://openquantumsafe.org)
+- [RGM Website](https://rgmchain.net)
 
-Please see [the contribution guide](CONTRIBUTING.md) to see how you can
-participate in the development of Dogecoin Core. There are often
-[topics seeking help](https://github.com/dogecoin/dogecoin/labels/help%20wanted)
-where your contributions will have high impact and get very appreciation. wow.
+## License
 
-## Very Much Frequently Asked Questions ❓
+MIT License. See [COPYING](COPYING) for details.
 
-Do you have a question regarding Dogecoin? An answer is perhaps already in the
-[FAQ](doc/FAQ.md) or the
-[Q&A section](https://github.com/dogecoin/dogecoin/discussions/categories/q-a)
-of the discussion board!
-
-## License - Much license ⚖️
-Dogecoin Core is released under the terms of the MIT license. See
-[COPYING](COPYING) for more information.
+Based on Dogecoin Core 1.14.x © 2013-2022 The Dogecoin Core developers  
+Based on Bitcoin Core © 2009-2022 The Bitcoin Core developers
