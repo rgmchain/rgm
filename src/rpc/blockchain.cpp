@@ -1878,9 +1878,53 @@ static UniValue getblockstats(const JSONRPCRequest& request)
     return ret;
 }
 
+
+UniValue getindexinfo(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() > 1)
+        throw std::runtime_error(
+            "getindexinfo ( index_name )\n"
+            "\nReturns the status of one or all available indices currently running in the node.\n"
+            "\nResult:\n"
+            "{                               (json object)\n"
+            "  \"name\" : {                  (json object)\n"
+            "    \"synced\" : true|false,    (boolean) Whether the index is synced\n"
+            "    \"best_block_height\" : n   (numeric) The block height to which the index is synced\n"
+            "  }\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getindexinfo", "")
+            + HelpExampleCli("getindexinfo", "\"txindex\"")
+            + HelpExampleRpc("getindexinfo", "")
+        );
+
+    UniValue result(UniValue::VOBJ);
+    UniValue txindex_info(UniValue::VOBJ);
+
+    // txindex status
+    int best_height = 0;
+    {
+        LOCK(cs_main);
+        best_height = chainActive.Height();
+    }
+
+    std::string filter = "";
+    if (request.params.size() > 0 && !request.params[0].isNull())
+        filter = request.params[0].get_str();
+
+    if (filter.empty() || filter == "txindex") {
+        txindex_info.pushKV("synced", fTxIndex);
+        txindex_info.pushKV("best_block_height", best_height);
+        result.pushKV("txindex", txindex_info);
+    }
+
+    return result;
+}
+
 static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         okSafe argNames
   //  --------------------- ------------------------  -----------------------  ------ ----------
+    { "blockchain",         "getindexinfo",           &getindexinfo,           true,  {"index_name"} },
     { "blockchain",         "getblockchaininfo",      &getblockchaininfo,      true,  {} },
     { "blockchain",         "getblockstats",          &getblockstats,          true,  {"hash", "stats"} },
     { "blockchain",         "getbestblockhash",       &getbestblockhash,       true,  {} },
