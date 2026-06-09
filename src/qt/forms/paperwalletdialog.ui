@@ -16,10 +16,10 @@
   <widget class="QLabel" name="privateKeyQRCode">
    <property name="geometry">
     <rect>
-     <x>524</x>
-     <y>159</y>
-     <width>149</width>
-     <height>149</height>
+     <x>551</x>
+     <y>86</y>
+     <width>130</width>
+     <height>130</height>
     </rect>
    </property>
    <property name="text">
@@ -32,10 +32,10 @@
   <widget class="QLabel" name="addressQRCode">
    <property name="geometry">
     <rect>
-     <x>47</x>
+     <x>42</x>
      <y>86</y>
-     <width>120</width>
-     <height>120</height>
+     <width>130</width>
+     <height>130</height>
     </rect>
    </property>
    <property name="text">
@@ -81,7 +81,7 @@
   <widget class="VerticalLabel" name="addressText">
    <property name="geometry">
     <rect>
-     <x>212</x>
+     <x>700</x>
      <y>10</y>
      <width>31</width>
      <height>361</height>
@@ -109,7 +109,7 @@
   <widget class="VerticalLabel" name="privateKeyText">
    <property name="geometry">
     <rect>
-     <x>500</x>
+     <x>740</x>
      <y>10</y>
      <width>31</width>
      <height>361</height>

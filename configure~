@@ -34701,7 +34701,7 @@ printf "%s\n" "#define CLIENT_VERSION_REVISION 0" >>confdefs.h
 printf "%s\n" "#define CLIENT_VERSION_BUILD 0" >>confdefs.h
 
 
-printf "%s\n" "#define CLIENT_VERSION_IS_RELEASE false" >>confdefs.h
+printf "%s\n" "#define CLIENT_VERSION_IS_RELEASE true" >>confdefs.h
 
 
 printf "%s\n" "#define COPYRIGHT_YEAR 2026" >>confdefs.h
@@ -34710,11 +34710,11 @@ printf "%s\n" "#define COPYRIGHT_YEAR 2026" >>confdefs.h
 printf "%s\n" "#define COPYRIGHT_HOLDERS \"The %s developers\"" >>confdefs.h
 
 
-printf "%s\n" "#define COPYRIGHT_HOLDERS_SUBSTITUTION \"Bitcoin Core and Dogecoin Core\"" >>confdefs.h
+printf "%s\n" "#define COPYRIGHT_HOLDERS_SUBSTITUTION \"RGM Core\"" >>confdefs.h
 
 
 
-printf "%s\n" "#define COPYRIGHT_HOLDERS_FINAL \"The Bitcoin Core and Dogecoin Core developers\"" >>confdefs.h
+printf "%s\n" "#define COPYRIGHT_HOLDERS_FINAL \"The RGM Core developers\"" >>confdefs.h
 
 
 printf "%s\n" "#define CURRENT_RELEASE_DATE \"2026-05-10\"" >>confdefs.h
@@ -34730,15 +34730,15 @@ CLIENT_VERSION_REVISION=0
 
 CLIENT_VERSION_BUILD=0
 
-CLIENT_VERSION_IS_RELEASE=false
+CLIENT_VERSION_IS_RELEASE=true
 
 COPYRIGHT_YEAR=2026
 
 COPYRIGHT_HOLDERS="The %s developers"
 
-COPYRIGHT_HOLDERS_SUBSTITUTION="Bitcoin Core and Dogecoin Core"
+COPYRIGHT_HOLDERS_SUBSTITUTION="RGM Core"
 
-COPYRIGHT_HOLDERS_FINAL="The Bitcoin Core and Dogecoin Core developers"
+COPYRIGHT_HOLDERS_FINAL="The RGM Core developers"
 
 CURRENT_RELEASE_DATE="2026-05-10"
 
