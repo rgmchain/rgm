@@ -34,7 +34,7 @@ const char* GetTxnOutputType(txnouttype t)
     case TX_WITNESS_V0_KEYHASH:     return "witness_v0_keyhash";
     case TX_WITNESS_V0_SCRIPTHASH:  return "witness_v0_scripthash";
     case TX_WITNESS_UNKNOWN:        return "witness_unknown";
-    case TX_WITNESS_V0_PQKEYHASH:   return "witness_v0_pqkeyhash";
+    case TX_WITNESS_V2_PQKEYHASH:   return "witness_v0_pqkeyhash";
     }
     return NULL;
 }
@@ -85,7 +85,7 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
             return true;
         }
         if (witnessversion == 2 && witnessprogram.size() == 20) {
-            typeRet = TX_WITNESS_V0_PQKEYHASH;
+            typeRet = TX_WITNESS_V2_PQKEYHASH;
             vSolutionsRet.push_back(witnessprogram);
             return true;
         }

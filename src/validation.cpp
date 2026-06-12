@@ -627,6 +627,25 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState& state, const C
         return state.DoS(0, false, REJECT_NONSTANDARD, "no-witness-yet", true);
     }
 
+    // RGM: Reject PQ witness v2 transactions before nQuantumSafeHeight
+    // This is a consensus rule, not just policy - applies to all networks
+    {
+        int nCurrentHeight = chainActive.Height();
+        int nQuantumSafeHeight = Params().GetConsensus(nCurrentHeight).nQuantumSafeHeight;
+        if (nCurrentHeight < nQuantumSafeHeight) {
+            for (const CTxOut& txout : tx.vout) {
+                txnouttype whichType;
+                std::vector<std::vector<unsigned char>> vSolutions;
+                if (Solver(txout.scriptPubKey, whichType, vSolutions)) {
+                    if (whichType == TX_WITNESS_V2_PQKEYHASH) {
+                        return state.DoS(10, false, REJECT_INVALID,
+                            "pq-not-yet-active");
+                    }
+                }
+            }
+        }
+    }
+
     // Rather not work on nonstandard transactions (unless -testnet/-regtest)
     std::string reason;
     if (fRequireStandard && !IsStandardTx(tx, reason, witnessEnabled))

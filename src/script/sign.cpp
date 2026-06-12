@@ -129,7 +129,7 @@ static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptP
         }
         return false;
 
-    case TX_WITNESS_V0_PQKEYHASH:
+    case TX_WITNESS_V2_PQKEYHASH:
         // PQ: return hash160 — actual signing done in ProduceSignature
         ret.push_back(vSolutions[0]);
         return true;
@@ -193,7 +193,7 @@ bool ProduceSignature(const BaseSignatureCreator& creator, const CScript& fromPu
         result.clear();
     }
 
-    else if (solved && whichType == TX_WITNESS_V0_PQKEYHASH)
+    else if (solved && whichType == TX_WITNESS_V2_PQKEYHASH)
     {
         uint160 pqHash(result[0]);
         std::vector<uint8_t> privkey_bytes, pubkey_bytes;

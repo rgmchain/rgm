@@ -192,7 +192,7 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& scriptPubKey, bool& 
         break;
     }
 
-    case TX_WITNESS_V0_PQKEYHASH:
+    case TX_WITNESS_V2_PQKEYHASH:
     {
         // PQ witness v2: ML-DSA-44
         // vSolutions[0] = 20-byte HASH160(pq_pubkey)

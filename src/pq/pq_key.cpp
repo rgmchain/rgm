@@ -8,9 +8,15 @@
 #include <cstring>
 #include <cassert>
 
+// RGM: initialise liboqs once per process
+static const bool _oqs_initialized = []() {
+    OQS_init();
+    return true;
+}();
+
+
 bool CPQKey::MakeNewKey(CPQPubKey& out_pubkey)
 {
-    OQS_init();
     OQS_SIG* sig = OQS_SIG_new(OQS_SIG_alg_ml_dsa_44);
     if (!sig) return false;
 
@@ -31,6 +37,7 @@ bool CPQKey::MakeNewKey(CPQPubKey& out_pubkey)
 std::vector<uint8_t> CPQKey::Sign(const std::vector<uint8_t>& hash) const
 {
     if (!IsValid()) return {};
+    if (hash.size() != 32) return {};
 
     OQS_SIG* sig = OQS_SIG_new(OQS_SIG_alg_ml_dsa_44);
     if (!sig) return {};

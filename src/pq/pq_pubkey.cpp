@@ -1,4 +1,5 @@
 #include "pq_pubkey.h"
+#include "pq_key.h"
 
 #include <oqs/sig_ml_dsa.h>
 #include <oqs/oqs.h>
@@ -13,7 +14,8 @@ bool CPQPubKey::Verify(const std::vector<uint8_t>& hash,
                        const std::vector<uint8_t>& sig) const
 {
     if (!IsValid()) return false;
-    if (sig.empty()) return false;
+    if (hash.size() != 32) return false;
+    if (sig.size() != MLDSA44_SIG_SIZE) return false;
 
     OQS_SIG* oqs = OQS_SIG_new(OQS_SIG_alg_ml_dsa_44);
     if (!oqs) return false;

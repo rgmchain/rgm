@@ -1571,7 +1571,12 @@ size_t static WitnessSigOps(int witversion, const std::vector<unsigned char>& wi
         }
     }
 
-    // Future flags may be implemented here.
+    // RGM PQ witness v2: ML-DSA-44 verification is much heavier than ECDSA.
+    // Count one PQ spend as 20 sigops to prevent validation DoS.
+    if (witversion == 2 && witprogram.size() == 20) {
+        return 20;
+    }
+
     return 0;
 }
 

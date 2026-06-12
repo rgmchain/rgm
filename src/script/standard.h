@@ -58,7 +58,7 @@ enum txnouttype
     TX_WITNESS_V0_SCRIPTHASH,
     TX_WITNESS_V0_KEYHASH,
     TX_WITNESS_UNKNOWN, //!< Only for Solver()
-    TX_WITNESS_V0_PQKEYHASH, // ML-DSA-44 post-quantum keyhash (witness v2)
+    TX_WITNESS_V2_PQKEYHASH, // ML-DSA-44 post-quantum keyhash (witness v2)
 };
 
 class CNoDestination {

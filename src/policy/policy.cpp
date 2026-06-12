@@ -51,7 +51,7 @@ bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType, const bool w
                (!fAcceptDatacarrier || scriptPubKey.size() > nMaxDatacarrierBytes))
           return false;
 
-    else if (!witnessEnabled && (whichType == TX_WITNESS_V0_KEYHASH || whichType == TX_WITNESS_V0_SCRIPTHASH || whichType == TX_WITNESS_V0_PQKEYHASH))
+    else if (!witnessEnabled && (whichType == TX_WITNESS_V0_KEYHASH || whichType == TX_WITNESS_V0_SCRIPTHASH || whichType == TX_WITNESS_V2_PQKEYHASH))
         return false;
 
     return whichType != TX_NONSTANDARD;
