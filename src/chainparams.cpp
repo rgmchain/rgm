@@ -81,7 +81,7 @@ public:
         consensus.BIP34Hash = uint256();
         consensus.BIP65Height = 1;
         consensus.BIP66Height = 1;
-        consensus.nQuantumSafeHeight = 50000; // PQ активен с SegWit (блок 50000)
+        consensus.nQuantumSafeHeight = 200; // PQ активен с SegWit (блок 50000)
 
         consensus.powLimit = uint256S("0x00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
 
@@ -99,14 +99,14 @@ public:
 
         // --- RGM: 3 этапа запуска (всё зашито заранее, без хард форков) ---
         // Этап 1: Legacy майнинг (блоки 0 - 10,000) ~9 дней
-        consensus.nPoolMiningPhaseHeight = 10000;
+        consensus.nPoolMiningPhaseHeight = 100;
 
         // Этап 2: SegWit (блок 50,000 = ~35 дней от старта)
         // SegWit должен быть активен ДО AuxPoW — чтобы AuxPoW coinbase мог использовать bech32
-        consensus.nSegwitHeight = 50000;
+        consensus.nSegwitHeight = 200;
 
         // Этап 3: AuxPoW merge-mining (блок 200,000 = ~139 дней от старта)
-        consensus.nAuxpowHeight = 200000;
+        consensus.nAuxpowHeight = 500000;
 
         consensus.nCoinbaseMaturity = 30;
         consensus.fPowAllowMinDifficultyBlocks = false;
@@ -148,7 +148,7 @@ public:
 
         // Этап 2 (блоки nAuxpowHeight → ...): AuxPoW включён
         auxpowConsensus = consensus;
-        auxpowConsensus.fAllowLegacyBlocks = false;  // legacy блоки запрещены!
+        auxpowConsensus.fAllowLegacyBlocks = true;
         auxpowConsensus.fStrictChainId = true;        // строгая проверка chainId
         auxpowConsensus.nHeightEffective = consensus.nAuxpowHeight; // с блока 200000
 
@@ -182,6 +182,8 @@ public:
 
         // seeds убираем
         vSeeds.clear();
+        vSeeds.push_back(CDNSSeedData("rgmchain.net", "seed.rgmchain.net"));
+        vSeeds.push_back(CDNSSeedData("rgmcore.org",  "seed.rgmcore.org"));
         vFixedSeeds.clear();
 
         // твои префиксы
@@ -284,7 +286,7 @@ public:
         consensus.nHeightEffective = 0;
 
         auxpowConsensus = consensus;
-        auxpowConsensus.fAllowLegacyBlocks = false;  // с блока 20000 legacy запрещены
+        auxpowConsensus.fAllowLegacyBlocks = true;
         auxpowConsensus.fStrictChainId = true;
         auxpowConsensus.nHeightEffective = consensus.nAuxpowHeight;
 
@@ -420,7 +422,7 @@ public:
         consensus.nHeightEffective = 0;
 
         auxpowConsensus = consensus;
-        auxpowConsensus.fAllowLegacyBlocks = false; // с блока 100 legacy запрещены
+        auxpowConsensus.fAllowLegacyBlocks = true;
         auxpowConsensus.fStrictChainId = false;     // regtest: не строго
         auxpowConsensus.nHeightEffective = consensus.nAuxpowHeight; // блок 100
 

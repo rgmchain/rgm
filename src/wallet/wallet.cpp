@@ -27,6 +27,7 @@
 #include "primitives/transaction.h"
 #include "script/script.h"
 #include "script/sign.h"
+#include "script/standard.h"
 #include "timedata.h"
 #include "txmempool.h"
 #include "util.h"
@@ -2541,6 +2542,14 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
             AvailableCoins(vAvailableCoins, true, coinControl);
 
             nFeeRet = 0;
+
+            // RGM: скрипт PQ-сдачи создаётся лениво и не более одного раза
+            // на транзакцию: цикл подбора комиссии ниже может выполняться
+            // несколько итераций, а каждый вызов MakeNewKey добавлял бы
+            // лишний ML-DSA-ключ (~2.5 КБ) в wallet.dat.
+            bool fPQChangeScriptMade = false;
+            CScript scriptPQChange;
+
             // Start with no fee and loop until there is enough fee
             while (true)
             {
@@ -2616,6 +2625,23 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                     dPriority += (double)nCredit * age;
                 }
 
+                // RGM: определяем типы фактически выбранных входов —
+                // от них будет зависеть тип адреса сдачи (см. ниже).
+                bool fInputsHavePQ = false;
+                bool fInputsHaveWitness = false;
+                for (const auto& pcoin : setCoins)
+                {
+                    const CScript& scriptIn = pcoin.first->tx->vout[pcoin.second].scriptPubKey;
+                    txnouttype whichType;
+                    std::vector<std::vector<unsigned char> > vSolutions;
+                    if (Solver(scriptIn, whichType, vSolutions)) {
+                        if (whichType == TX_WITNESS_V2_PQKEYHASH)
+                            fInputsHavePQ = true;
+                        else if (whichType == TX_WITNESS_V0_KEYHASH || whichType == TX_WITNESS_V0_SCRIPTHASH)
+                            fInputsHaveWitness = true;
+                    }
+                }
+
                 const CAmount nChange = nValueIn - nValueToSelect;
                 if (nChange > 0)
                 {
@@ -2638,17 +2664,60 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                         //  rediscover unknown transactions that were written with keys of ours to recover
                         //  post-backup change.
 
-                        // Reserve a new key pair from key pool
-                        CPubKey vchPubKey;
-                        bool ret;
-                        ret = reservekey.GetReservedKey(vchPubKey);
-                        if (!ret)
-                        {
-                            strFailReason = _("Keypool ran out, please call keypoolrefill first");
-                            return false;
+                        // RGM: сдача наследует тип потраченных входов:
+                        //   PQ-входы     -> сдача на PQ-адрес (квантово-стойкие
+                        //                   средства не деградируют в ECDSA);
+                        //   SegWit-входы -> сдача на bech32;
+                        //   иначе        -> g_change_type (по умолчанию legacy).
+                        // Явно заданный -changetype имеет приоритет над эвристикой.
+                        OutputType changeType = g_change_type;
+                        if (!IsArgSet("-changetype")) {
+                            if (fInputsHavePQ)
+                                changeType = OutputType::PQ;
+                            else if (fInputsHaveWitness)
+                                changeType = OutputType::BECH32;
                         }
 
-                        scriptChange = GetScriptForDestination(GetDestinationForKey(vchPubKey, g_change_type));
+                        if (changeType == OutputType::PQ) {
+                            // ML-DSA-ключ нельзя получить из ECDSA-keypool —
+                            // генерируем отдельный PQ-ключ (максимум один раз
+                            // на транзакцию, см. fPQChangeScriptMade выше).
+                            // Если транзакция в итоге не состоится, ключ
+                            // останется в wallet.dat неиспользованным — это
+                            // безвредно.
+                            if (!fPQChangeScriptMade) {
+                                CPQPubKey pqPubKey;
+                                CPQKey pqKey;
+                                if (!pqKey.MakeNewKey(pqPubKey)) {
+                                    strFailReason = _("PQ change key generation failed");
+                                    return false;
+                                }
+                                if (!AddPQKey(pqKey, pqPubKey)) {
+                                    strFailReason = _("Failed to store PQ change key");
+                                    return false;
+                                }
+                                std::vector<uint8_t> hash160 = pqPubKey.GetHash160();
+                                WitnessUnknown pqDest;
+                                pqDest.version = 2;
+                                pqDest.length = 20;
+                                std::copy(hash160.begin(), hash160.end(), pqDest.program);
+                                scriptPQChange = GetScriptForDestination(CTxDestination(pqDest));
+                                fPQChangeScriptMade = true;
+                            }
+                            scriptChange = scriptPQChange;
+                        } else {
+                            // Reserve a new key pair from key pool
+                            CPubKey vchPubKey;
+                            bool ret;
+                            ret = reservekey.GetReservedKey(vchPubKey);
+                            if (!ret)
+                            {
+                                strFailReason = _("Keypool ran out, please call keypoolrefill first");
+                                return false;
+                            }
+
+                            scriptChange = GetScriptForDestination(GetDestinationForKey(vchPubKey, changeType));
+                        }
                     }
 
                     CTxOut newTxOut(nChange, scriptChange);

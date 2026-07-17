@@ -627,10 +627,10 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState& state, const C
         return state.DoS(0, false, REJECT_NONSTANDARD, "no-witness-yet", true);
     }
 
-    // RGM: Reject PQ witness v2 transactions before nQuantumSafeHeight
-    // This is a consensus rule, not just policy - applies to all networks
+    // RGM: Reject PQ witness v2 outputs before nQuantumSafeHeight (mempool policy)
+    // Consensus enforcement is in CheckTxInputs() for spend-side validation
     {
-        int nCurrentHeight = chainActive.Height();
+        int nCurrentHeight = chainActive.Height() + 1;
         int nQuantumSafeHeight = Params().GetConsensus(nCurrentHeight).nQuantumSafeHeight;
         if (nCurrentHeight < nQuantumSafeHeight) {
             for (const CTxOut& txout : tx.vout) {
@@ -1454,6 +1454,22 @@ bool CheckTxInputs(const CChainParams& params, const CTransaction& tx, CValidati
                     return state.Invalid(false,
                         REJECT_INVALID, "bad-txns-premature-spend-of-coinbase",
                         strprintf("tried to spend coinbase at depth %d", nSpendHeight - coins->nHeight));
+            }
+
+            // RGM: Reject PQ witness v2 spends before nQuantumSafeHeight (consensus rule)
+            {
+                int nQuantumSafeHeight = params.GetConsensus(nSpendHeight).nQuantumSafeHeight;
+                if (nSpendHeight < nQuantumSafeHeight) {
+                    const CScript& scriptPubKey = coins->vout[prevout.n].scriptPubKey;
+                    txnouttype whichType;
+                    std::vector<std::vector<unsigned char>> vSolutions;
+                    if (Solver(scriptPubKey, whichType, vSolutions)) {
+                        if (whichType == TX_WITNESS_V2_PQKEYHASH) {
+                            return state.DoS(100, false, REJECT_INVALID,
+                                "pq-spend-not-yet-active");
+                        }
+                    }
+                }
             }
 
             // Check for negative or overflow input values

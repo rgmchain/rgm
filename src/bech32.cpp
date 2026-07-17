@@ -56,7 +56,7 @@ uint32_t PolyMod(const data& v)
         if (c0 & 8)  c ^= 0x3d4233dd;
         if (c0 & 16) c ^= 0x2a1462b3;
     }
-    return c ^ 1;
+    return c;
 }
 
 /** Convert to lower case. */
@@ -81,9 +81,15 @@ data HRPExpand(const std::string& hrp)
 }
 
 /** Verify a checksum. */
+/** BIP-350: witness v0 uses bech32 (const 1), v1+ uses bech32m. */
+uint32_t ChecksumConst(const data& values)
+{
+    return (!values.empty() && values[0] != 0) ? 0x2bc830a3UL : 1UL;
+}
+
 bool VerifyChecksum(const std::string& hrp, const data& values)
 {
-    return PolyMod(Cat(HRPExpand(hrp), values)) == 0;
+    return PolyMod(Cat(HRPExpand(hrp), values)) == ChecksumConst(values);
 }
 
 /** Create a checksum. */
@@ -91,7 +97,7 @@ data CreateChecksum(const std::string& hrp, const data& values)
 {
     data enc = Cat(HRPExpand(hrp), values);
     enc.resize(enc.size() + 6);
-    uint32_t mod = PolyMod(enc); // PolyMod уже делает return c^1 — дополнительный ^1 не нужен
+    uint32_t mod = PolyMod(enc) ^ ChecksumConst(values);
     data ret(6);
     for (size_t i = 0; i < 6; ++i) {
         ret[i] = (mod >> (5 * (5 - i))) & 31;

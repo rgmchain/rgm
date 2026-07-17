@@ -187,8 +187,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     // -promiscuousmempoolflags is used.
     // TODO: replace this with a call to main to assess validity of a mempool
     // transaction (which in most cases can be a no-op).
-    //fIncludeWitness = IsWitnessEnabled(pindexPrev, consensus) && fMineWitnessTx;
-    fIncludeWitness = IsWitnessEnabled(pindexPrev, consensus);
+    fIncludeWitness = IsWitnessEnabled(pindexPrev, consensus) && fMineWitnessTx;
 
     addPriorityTxs();
     int nPackagesSelected = 0;

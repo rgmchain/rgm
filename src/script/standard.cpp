@@ -34,7 +34,7 @@ const char* GetTxnOutputType(txnouttype t)
     case TX_WITNESS_V0_KEYHASH:     return "witness_v0_keyhash";
     case TX_WITNESS_V0_SCRIPTHASH:  return "witness_v0_scripthash";
     case TX_WITNESS_UNKNOWN:        return "witness_unknown";
-    case TX_WITNESS_V2_PQKEYHASH:   return "witness_v0_pqkeyhash";
+    case TX_WITNESS_V2_PQKEYHASH:   return "witness_v2_pqkeyhash";
     }
     return NULL;
 }
@@ -228,6 +228,15 @@ bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
         WitnessV0ScriptHash hash;
         std::copy(vSolutions[0].begin(), vSolutions[0].end(), hash.begin());
         addressRet = hash;
+        return true;
+    }
+    else if (whichType == TX_WITNESS_V2_PQKEYHASH)
+    {
+        WitnessUnknown unk;
+        unk.version = 2;
+        unk.length  = (unsigned int)vSolutions[0].size();
+        std::copy(vSolutions[0].begin(), vSolutions[0].end(), unk.program);
+        addressRet = unk;
         return true;
     }
     else if (whichType == TX_WITNESS_UNKNOWN)

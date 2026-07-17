@@ -102,17 +102,11 @@
          <widget class="QComboBox" name="addressType">
           <property name="toolTip">
            <string>Legacy (R...) — original address format, works on all nodes.
-P2SH-SegWit (r...) — compatible SegWit, requires SegWit activation.
 Bech32 (native SegWit) — lowest fees, requires SegWit activation.</string>
           </property>
           <item>
            <property name="text">
             <string>Legacy (R...)</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>P2SH-SegWit (r...)</string>
            </property>
           </item>
           <item>

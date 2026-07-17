@@ -135,9 +135,11 @@ void ReceiveCoinsDialog::updateDisplayUnit()
 
 OutputType ReceiveCoinsDialog::selectedAddressType() const
 {
+    // RGM: пункт P2SH-SegWit удалён из GUI (receivecoinsdialog.ui) —
+    // в новой цепи переходный обёрнутый SegWit не нужен.
+    // Комбобокс: 0 = Legacy, 1 = Bech32 (native SegWit).
     switch (ui->addressType->currentIndex()) {
-    case 1:  return OutputType::P2SH_SEGWIT;
-    case 2:  return OutputType::BECH32;
+    case 1:  return OutputType::BECH32;
     default: return OutputType::LEGACY;
     }
 }
@@ -159,7 +161,7 @@ void ReceiveCoinsDialog::on_receiveButton_clicked()
 
         if (currentHeight < segwitHeight) {
             QMessageBox::warning(this, tr("SegWit not active"),
-                tr("SegWit address types (P2SH-SegWit and Bech32) are not yet active on the network.\n\n"
+                tr("Bech32 (native SegWit) addresses are not yet active on the network.\n\n"
                    "Current block: %1\n"
                    "SegWit activation block: %2\n\n"
                    "Please select \"Legacy\" address type.")
