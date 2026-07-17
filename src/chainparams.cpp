@@ -81,7 +81,7 @@ public:
         consensus.BIP34Hash = uint256();
         consensus.BIP65Height = 1;
         consensus.BIP66Height = 1;
-        consensus.nQuantumSafeHeight = 200; // PQ активен с SegWit (блок 50000)
+        consensus.nQuantumSafeHeight = 50000; // PQ активен с SegWit (блок 50000)
 
         consensus.powLimit = uint256S("0x00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
 
@@ -98,14 +98,14 @@ public:
         consensus.fDigishieldDifficultyCalculation = true;
 
         // --- RGM: 3 этапа запуска (всё зашито заранее, без хард форков) ---
-        // Этап 1: Legacy майнинг (блоки 0 - 10,000) ~9 дней
-        consensus.nPoolMiningPhaseHeight = 100;
+        // Этап 1: Legacy майнинг (блоки 0 - 25,000) ~17 дней
+        consensus.nPoolMiningPhaseHeight = 25000;
 
         // Этап 2: SegWit (блок 50,000 = ~35 дней от старта)
         // SegWit должен быть активен ДО AuxPoW — чтобы AuxPoW coinbase мог использовать bech32
-        consensus.nSegwitHeight = 200;
+        consensus.nSegwitHeight = 50000;
 
-        // Этап 3: AuxPoW merge-mining (блок 200,000 = ~139 дней от старта)
+        // Этап 3: AuxPoW merge-mining (блок 500,000 = ~347 дней от старта)
         consensus.nAuxpowHeight = 500000;
 
         consensus.nCoinbaseMaturity = 30;
@@ -150,7 +150,7 @@ public:
         auxpowConsensus = consensus;
         auxpowConsensus.fAllowLegacyBlocks = true;
         auxpowConsensus.fStrictChainId = true;        // строгая проверка chainId
-        auxpowConsensus.nHeightEffective = consensus.nAuxpowHeight; // с блока 200000
+        auxpowConsensus.nHeightEffective = consensus.nAuxpowHeight; // с блока 500000
 
         // Связываем дерево:
         // consensus (0..199999) → pRight → auxpowConsensus (200000+)
@@ -185,7 +185,9 @@ public:
         vSeeds.push_back(CDNSSeedData("rgmchain.net", "seed.rgmchain.net"));
         vSeeds.push_back(CDNSSeedData("rgmcore.org",  "seed.rgmcore.org"));
         vFixedSeeds.clear();
-
+	
+	vFixedSeeds.push_back(SeedSpec6{{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xff,0xff,185,23,80,53}, 14030});
+        vFixedSeeds.push_back(SeedSpec6{{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xff,0xff,188,235,1,185}, 14030});
         // твои префиксы
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1, 60);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1, 122);
