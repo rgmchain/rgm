@@ -31,6 +31,6 @@ password = generate_password()
 salt = generate_salt(16)
 password_hmac = password_to_hmac(salt, password)
 
-print('String to be appended to dogecoin.conf:')
+print('String to be appended to rgm.conf:')
 print(f'rpcauth={username}:{salt}${password_hmac}')
 print(f'Your password:\n{password}')

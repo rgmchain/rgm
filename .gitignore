@@ -60,3 +60,4 @@ banlist.dat
 .idea/
 Thumbs.db
 .DS_Store
+share/setup.nsi
