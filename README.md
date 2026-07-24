@@ -1,99 +1,185 @@
-<div align="center">
-  <h1>RGM Core</h1>
-  <h3>Post-Quantum Cryptocurrency</h3>
-  <p>
-    <strong>ML-DSA-44 (NIST FIPS 204) · Witness Version 2 · AuxPoW Merge Mining</strong>
-  </p>
-  <p>
-    <img src="https://img.shields.io/badge/version-2.0.0-gold" alt="version">
-    <img src="https://img.shields.io/badge/algorithm-ML--DSA--44-blue" alt="algorithm">
-    <img src="https://img.shields.io/badge/standard-NIST%20FIPS%20204-green" alt="standard">
-    <img src="https://img.shields.io/badge/license-MIT-lightgrey" alt="license">
-  </p>
-</div>
+# RGM — RGMChain Core
+
+RGMChain is a fork of **Dogecoin 1.14.x** that adds a native post-quantum address type
+signed with **ML-DSA-44** (CRYSTALS-Dilithium), the algorithm standardised by NIST as
+**FIPS 204** in August 2024.
+
+Everything else — the UTXO model, Scrypt proof of work, the wallet, the RPC interface —
+works the way it does in Dogecoin. The post-quantum support is an addition, not a rewrite.
+
+**Mainnet launched 27 July 2026, 17:00 UTC. No premine, no presale, no dev fund.**
 
 ---
 
-## What is RGM?
+## Why
 
-RGM is the first cryptocurrency with **native post-quantum digital signatures** at the consensus layer. While Bitcoin and Ethereum rely on ECDSA — vulnerable to Shor's algorithm on a quantum computer — RGM uses **ML-DSA-44**, the lattice-based signature algorithm standardized by NIST as **FIPS 204** in August 2024.
+Bitcoin-family chains sign with ECDSA. Once an address has spent, its public key sits
+on-chain permanently, and Shor's algorithm running on a sufficiently capable quantum
+computer could derive the private key from it.
 
-> *"Security is not a feature you add later. It is the foundation you build on."*
+Whether such a machine will be built, and when, is genuinely unknown. But coins held for
+years carry that uncertainty, and adding an option later is far harder than starting with
+it available.
 
-## Key Features
+### The honest tradeoff
 
-- **Post-Quantum Signatures** — ML-DSA-44 (CRYSTALS-Dilithium), NIST FIPS 204
-- **Native Protocol Integration** — PQ at consensus layer, not a layer-2 solution
-- **New Address Type** — `rgm1z…` (witness version 2, bech32)
-- **Backward Compatible** — legacy `R…` and SegWit `rgm1q…` addresses still work
-- **Merge Mining** — AuxPoW with Litecoin and Dogecoin (activates at block 200,000)
-- **Proven Codebase** — fork of Dogecoin 1.14.x with liboqs 0.15.0 integration
+An ML-DSA-44 signature is **2,420 bytes**. ECDSA is 72. That is roughly 33× the witness
+data, and spending a post-quantum input costs accordingly. This is inherent to
+lattice-based signatures and cannot be engineered away.
 
-## Algorithm Specifications
+So RGM does not force it. Three address types coexist:
 
-| Parameter | Value |
-|-----------|-------|
-| Algorithm | ML-DSA-44 (CRYSTALS-Dilithium) |
-| Standard | NIST FIPS 204 (August 2024) |
-| Security Level | Level 2 (~128-bit post-quantum) |
-| Signature Size | 2,420 bytes |
-| Public Key Size | 1,312 bytes |
-| Address Format | `rgm1z…` (witness v2, bech32) |
+| Type | Prefix | Use |
+|---|---|---|
+| Legacy | `R…` | compatibility |
+| SegWit v0 | `rgm1q…` | everyday spending |
+| Post-quantum | `rgm1z…` | long-term savings |
 
-## Network Parameters
+**SegWit for circulation, post-quantum for savings.** The wallet picks change output types
+automatically (PQ > bech32 > legacy).
 
-| Parameter | Value |
-|-----------|-------|
-| Block Time | ~1 minute |
-| Initial Reward | 50 RGM |
-| SegWit + PQ Activation | Block 50,000 |
-| AuxPoW Activation | Block 500,000 |
-| First Halving | Block 2,102,400 → 25 RGM |
+---
 
-## Building
+## Specifications
 
-### Dependencies
+| | |
+|---|---|
+| Base | Dogecoin 1.14.x fork |
+| Proof of work | Scrypt |
+| Difficulty | LWMA (window 45) + DigiShield, from block 1 |
+| Block time | 60 seconds |
+| Block reward | 50 RGM |
+| Halving | every 2,102,400 blocks (~4 years) |
+| Coinbase maturity | 30 blocks |
+| PQ algorithm | ML-DSA-44 via liboqs 0.15.0 |
+| P2P / RPC port | 14030 / 14031 |
+| Premine | none |
 
-- liboqs 0.15.0 (Open Quantum Safe)
-- Qt 5.x (for wallet GUI)
-- Berkeley DB 4.8+
-- OpenSSL
+## Activation schedule
 
-### Linux
+All heights are compiled in advance — no hard forks are planned.
+
+| Height | What activates | Approx. |
+|---|---|---|
+| 1 | Solo mining, open to everyone | launch |
+| 25,000 | Pool mining | ~17 days |
+| 50,000 | SegWit + post-quantum addresses | ~35 days |
+| 500,000 | AuxPoW merge-mining with LTC / DOGE | ~347 days |
+| 2,102,400 | First halving → 25 RGM | ~4 years |
+
+---
+
+## Downloads
+
+Prebuilt binaries are on the [Releases](https://github.com/rgmchain/rgm/releases) page.
+
+**Verify before running.** Checksums are published in `SHA256SUMS.txt` on the release page,
+on [rgmchain.net](https://rgmchain.net), and in the announcement thread — compare at least
+two sources.
 
 ```bash
+sha256sum -c SHA256SUMS.txt
+```
+
+---
+
+## Running a node
+
+Create `rgm.conf` in the data directory:
+
+```
+server=1
+daemon=1
+txindex=1
+
+# There is no DNS seed yet — this line is required
+addnode=185.23.80.53:14030
+```
+
+Data directory:
+
+- Linux — `~/.rgm/`
+- Windows — `%APPDATA%\RGM\`
+
+Then:
+
+```bash
+./rgmd
+./rgm-cli getblockchaininfo
+```
+
+### Mining
+
+Blocks 1 to 25,000 are solo only. Pool mining activates automatically at 25,000.
+
+```bash
+./rgm-cli getnewaddress
+./rgm-cli generate 1 2147483647
+```
+
+A GUI solo miner for Windows is available on [rgmchain.net](https://rgmchain.net).
+
+---
+
+## Building from source
+
+Standard Bitcoin Core 0.14 build process, plus liboqs.
+
+```bash
+sudo apt install build-essential libtool autotools-dev automake pkg-config \
+     bsdmainutils python3 libssl-dev libevent-dev libboost-all-dev \
+     libdb5.3-dev libdb5.3++-dev libminiupnpc-dev libzmq3-dev
+
+# liboqs 0.15.0 — see https://github.com/open-quantum-safe/liboqs
+
 ./autogen.sh
-./configure \
-  --with-gui \
-  --with-incompatible-bdb \
-  LIBOQS_CFLAGS="-I/usr/local/include" \
-  LIBOQS_LIBS="-L/usr/local/lib -loqs -lssl -lcrypto"
+./configure --with-incompatible-bdb
 make -j$(nproc)
 ```
 
-## Usage
+For the Qt GUI, add `libqt5gui5 libqt5core5a libqt5dbus5 qttools5-dev qttools5-dev-tools
+libprotobuf-dev protobuf-compiler libqrencode-dev`.
 
-```bash
-# Start daemon
-rgmd -daemon
+---
 
-# Generate a post-quantum address
-rgm-cli getnewaddress "" pq
-# Returns: rgm1z...
+## Known limitations
 
-# Send to PQ address
-rgm-cli sendtoaddress "rgm1z..." 10.0
-```
+These are real and worth knowing before you decide to participate:
 
-## References
+- **Low hashrate at launch.** Until merge-mining activates at block 500,000, a 51% attack
+  is affordable for anyone with meaningful Scrypt hashpower. Treat confirmations
+  accordingly.
+- **No checkpoints yet** in chainparams, and `minimumchainwork` is zero. Both will be added
+  in the first update, once the chain has real work behind it.
+- **One public seed node.** A DNS seed and fixed seeds are planned but not in place. If the
+  seed goes down, new nodes need a manual `addnode`.
+- **Post-quantum addresses activate at block 50,000**, not at launch.
+- **No exchange listings.** None have been approached and there is nothing to announce.
+- **No external code review.** This is a one-person project. Review is welcome and needed.
 
-- [NIST FIPS 204 — ML-DSA Standard](https://csrc.nist.gov/pubs/fips/204/final)
-- [Open Quantum Safe — liboqs](https://openquantumsafe.org)
-- [RGM Website](https://rgmchain.net)
+---
+
+## Contributing
+
+Bug reports, criticism of the design, and code review are all welcome — especially of the
+post-quantum implementation. If something there is wrong, I would rather hear it now than
+after people hold coins.
+
+Open an issue, or write in Telegram.
+
+---
+
+## Links
+
+- Website — https://rgmchain.net
+- Block explorer — https://mainnet.rgmchain.net
+- Wallet (Python / SPV) — https://github.com/rgmchain/rgmwallet
+- Telegram — https://t.me/RGM_Core
+- X — https://x.com/RGM_Core
 
 ## License
 
-MIT License. See [COPYING](COPYING) for details.
+MIT, inherited from Bitcoin Core and Dogecoin. See [COPYING](COPYING).
 
-Based on Dogecoin Core 1.14.x © 2013-2022 The Dogecoin Core developers  
-Based on Bitcoin Core © 2009-2022 The Bitcoin Core developers
+Post-quantum support uses [liboqs](https://github.com/open-quantum-safe/liboqs) from the
+Open Quantum Safe project.
