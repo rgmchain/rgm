@@ -1,3 +1,19 @@
+<div align="center">
+
+<img src="share/pixmaps/rgm256.png" width="128" alt="RGM">
+
+# RGMChain
+
+**A Dogecoin fork with native post-quantum addresses**
+
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](COPYING)
+[![Release](https://img.shields.io/github/v/release/rgmchain/rgm)](https://github.com/rgmchain/rgm/releases)
+[![Website](https://img.shields.io/badge/website-rgmchain.net-f6c90e)](https://rgmchain.net)
+[![Telegram](https://img.shields.io/badge/telegram-@RGM__Core-229ED9)](https://t.me/RGM_Core)
+
+</div>
+
+---
 # RGM — RGMChain Core
 
 RGMChain is a fork of **Dogecoin 1.14.x** that adds a native post-quantum address type
