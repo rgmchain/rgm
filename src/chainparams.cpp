@@ -113,6 +113,14 @@ public:
         consensus.fPowAllowRGMMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = false;
 
+        // --- RGM: аварийный сброс сложности (хардфорк первого обновления) ---
+        // Активируется с блока 364 (первый после застревания сети на 363).
+        // Если с прошлого блока прошло > 3 ч — разрешён блок минимальной сложности,
+        // чтобы уход крупного майнера больше не мог заморозить цепь. 3 ч > окна
+        // MAX_FUTURE_BLOCK_TIME (2 ч), поэтому на здоровой сети не срабатывает.
+        consensus.nEmergencyMinDiffHeight  = 364;
+        consensus.nEmergencyMinDiffTimeout = 3 * 60 * 60; // 3 часа
+
         consensus.nRuleChangeActivationThreshold = 9576;
         consensus.nMinerConfirmationWindow = 10080;
 
@@ -131,8 +139,9 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = std::numeric_limits<int64_t>::max();
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout   = std::numeric_limits<int64_t>::max();
 
-        consensus.nMinimumChainWork = uint256();
-        consensus.defaultAssumeValid = uint256();
+        // RGM: значения на блок 363 (последний общий блок перед хардфорком)
+        consensus.nMinimumChainWork  = uint256S("0x000000000000000000000000000000000000000000000000000040f9b113ab63");
+        consensus.defaultAssumeValid = uint256S("0x229cab6d14d6b63f277b687f614555360303a0a820c34f608647759e362c2b60");
 
         // AuxPoW параметры
         consensus.nAuxpowChainId = 0x5247;
@@ -203,7 +212,8 @@ public:
 
         checkpointData = {
             {
-                {0, consensus.hashGenesisBlock}
+                {0, consensus.hashGenesisBlock},
+                {363, uint256S("0x229cab6d14d6b63f277b687f614555360303a0a820c34f608647759e362c2b60")}
             }
         };
 
@@ -258,6 +268,10 @@ public:
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowAllowRGMMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = false;
+
+        // RGM: аварийное правило не нужно (testnet и так разрешает min-diff блоки)
+        consensus.nEmergencyMinDiffHeight  = -1;
+        consensus.nEmergencyMinDiffTimeout = 0;
 
         consensus.nRuleChangeActivationThreshold = 1512;
         consensus.nMinerConfirmationWindow = 2016;
@@ -387,6 +401,10 @@ public:
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowAllowRGMMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = true;       // сложность не меняется — быстрое тестирование
+
+        // RGM: аварийное правило выключено (regtest без ретаргета)
+        consensus.nEmergencyMinDiffHeight  = -1;
+        consensus.nEmergencyMinDiffTimeout = 0;
 
         consensus.nRuleChangeActivationThreshold = 108;
         consensus.nMinerConfirmationWindow = 144;

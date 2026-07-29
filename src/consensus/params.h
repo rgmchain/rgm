@@ -73,6 +73,9 @@ struct Params {
     int32_t nPoolMiningPhaseHeight;
     int32_t nAuxpowHeight;
     int32_t nSegwitHeight;
+    /** RGM: аварийный сброс сложности при застревании сети (уход крупного майнера) */
+    int nEmergencyMinDiffHeight;      // высота активации правила (-1 = выключено)
+    int64_t nEmergencyMinDiffTimeout; // секунд без блока, после чего разрешён min-diff блок
     int64_t DifficultyAdjustmentInterval() const { return nPowTargetTimespan / nPowTargetSpacing; }
 
     /** Dogecoin-specific parameters */

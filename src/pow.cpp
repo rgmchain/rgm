@@ -94,6 +94,23 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     if (params.fPowNoRetargeting)
         return pindexLast->nBits;
 
+    // --- RGM: аварийный сброс сложности при застревании сети (хардфорк) ---
+    // Если правило активно (высота следующего блока >= nEmergencyMinDiffHeight)
+    // и с предыдущего блока прошло больше nEmergencyMinDiffTimeout секунд —
+    // разрешаем блок минимальной сложности. Это спасает цепь, когда крупный
+    // майнер разгоняет сложность и уходит, а честного хешрейта не хватает даже
+    // на один блок. Таймаут берётся больше окна MAX_FUTURE_BLOCK_TIME (2 ч),
+    // поэтому на здоровой сети правило не срабатывает и не эксплуатируется:
+    // время блока нельзя задрать в будущее настолько, чтобы искусственно
+    // вызвать сброс. Один такой блок через DigiShield каскадно возвращает
+    // сложность к минимуму, после чего она отрастает обратно под реальный
+    // хешрейт (не быстрее +33%/блок).
+    if (params.nEmergencyMinDiffHeight >= 0 &&
+        pindexLast->nHeight + 1 >= params.nEmergencyMinDiffHeight &&
+        pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.nEmergencyMinDiffTimeout) {
+        return nProofOfWorkLimit;
+    }
+
     // --- RGM: минимальная сложность для testnet ---
     if (AllowMinDifficultyForBlock(pindexLast, pblock, params)) {
         // Dogecoin-style: проверяем и DigiShield вариант
