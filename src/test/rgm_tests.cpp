@@ -9,7 +9,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-BOOST_FIXTURE_TEST_SUITE(dogecoin_tests, TestingSetup)
+BOOST_FIXTURE_TEST_SUITE(rgm_tests, TestingSetup)
 
 /**
  * the maximum block reward at a given height for a block without fees
