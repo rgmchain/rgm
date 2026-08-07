@@ -8,6 +8,8 @@
 #include "test/test_bitcoin.h"
 #include "pow.h"
 #include "primitives/block.h"
+#include "pq/pq_key.h"
+#include "pq/pq_pubkey.h"
 
 #include <boost/test/unit_test.hpp>
 
@@ -129,6 +131,33 @@ BOOST_AUTO_TEST_CASE(get_next_work_digishield_rounding)
     pindexLast.nTime = 1395094727;
     pindexLast.nBits = 0x1b671062;
     BOOST_CHECK_EQUAL(CalculateRGMNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x1b6558a4);
+}
+
+BOOST_AUTO_TEST_CASE(rgm_pq_sign_verify_roundtrip)
+{
+    CPQKey key;
+    CPQPubKey pub;
+    BOOST_REQUIRE(key.MakeNewKey(pub));
+    BOOST_CHECK(key.IsValid());
+    BOOST_CHECK(pub.IsValid());
+
+    std::vector<uint8_t> hash(32, 0x42);
+    std::vector<uint8_t> sig = key.Sign(hash);
+    BOOST_REQUIRE(!sig.empty());
+    BOOST_CHECK(pub.Verify(hash, sig));
+
+    // Tampered hash -> reject
+    std::vector<uint8_t> badHash(32, 0x43);
+    BOOST_CHECK(!pub.Verify(badHash, sig));
+
+    // Tampered signature -> reject
+    std::vector<uint8_t> badSig = sig;
+    badSig[0] ^= 0xFF;
+    BOOST_CHECK(!pub.Verify(hash, badSig));
+
+    // Clear() wipes the key (secure_allocator + memory_cleanse) and invalidates it
+    key.Clear();
+    BOOST_CHECK(!key.IsValid());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
