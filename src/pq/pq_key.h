@@ -4,6 +4,11 @@
 #include <vector>
 #include <cstdint>
 #include <stdexcept>
+#include "support/cleanse.h"
+#include "support/allocators/secure.h"
+
+// Private key bytes in mlock'd, auto-cleansed memory (no swap-to-disk)
+typedef std::vector<uint8_t, secure_allocator<uint8_t> > CPQKeyData;
 
 // ML-DSA-44 sizes (NIST FIPS 204)
 static const size_t MLDSA44_PRIVKEY_SIZE = 2560;
@@ -20,7 +25,7 @@ class CPQPubKey;
 class CPQKey
 {
 private:
-    std::vector<uint8_t> keydata;   // raw ML-DSA-44 private key (2560 bytes)
+    CPQKeyData keydata;   // raw ML-DSA-44 private key (2560 bytes)
     bool fValid;
 
 public:
@@ -62,13 +67,13 @@ public:
     /**
      * Get raw private key bytes for storage in wallet.dat.
      */
-    const std::vector<uint8_t>& GetRaw() const { return keydata; }
+    std::vector<uint8_t> GetRaw() const { return std::vector<uint8_t>(keydata.begin(), keydata.end()); }
 
     void Clear()
     {
         if (!keydata.empty()) {
             // Zero out key material before freeing
-            std::fill(keydata.begin(), keydata.end(), 0);
+            memory_cleanse(keydata.data(), keydata.size());
             keydata.clear();
         }
         fValid = false;

@@ -21,7 +21,7 @@ bool CPQKey::MakeNewKey(CPQPubKey& out_pubkey)
     if (!sig) return false;
 
     std::vector<uint8_t> pub(sig->length_public_key);
-    std::vector<uint8_t> priv(sig->length_secret_key);
+    CPQKeyData priv(sig->length_secret_key);
 
     OQS_STATUS rc = OQS_SIG_keypair(sig, pub.data(), priv.data());
     OQS_SIG_free(sig);
@@ -61,7 +61,7 @@ std::vector<uint8_t> CPQKey::Sign(const std::vector<uint8_t>& hash) const
 bool CPQKey::SetRaw(const std::vector<uint8_t>& data)
 {
     if (data.size() != MLDSA44_PRIVKEY_SIZE) return false;
-    keydata = data;
+    keydata.assign(data.begin(), data.end());
     fValid  = true;
     return true;
 }
