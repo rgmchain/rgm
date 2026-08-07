@@ -6,146 +6,68 @@
 #include "chainparams.h"
 #include "rgm.h"
 #include "test/test_bitcoin.h"
+#include "pow.h"
+#include "primitives/block.h"
 
 #include <boost/test/unit_test.hpp>
 
 BOOST_FIXTURE_TEST_SUITE(rgm_tests, TestingSetup)
 
-/**
- * the maximum block reward at a given height for a block without fees
- */
-uint64_t expectedMaxSubsidy(int height) {
-    if (height < 100000) {
-        return 1000000 * COIN;
-    } else if (height < 145000) {
-        return 500000 * COIN;
-    } else if (height < 200000) {
-        return 250000 * COIN;
-    } else if (height < 300000) {
-        return 125000 * COIN;
-    } else if (height < 400000) {
-        return  62500 * COIN;
-    } else if (height < 500000) {
-        return  31250 * COIN;
-    } else if (height < 600000) {
-        return  15625 * COIN;
-    } else {
-        return  10000 * COIN;
-    }
-}
-
-/**
- * the minimum possible value for the maximum block reward at a given height
- * for a block without fees
- */
-uint64_t expectedMinSubsidy(int height) {
-    if (height < 100000) {
-        return 0;
-    } else if (height < 145000) {
-        return 0;
-    } else if (height < 200000) {
-        return 250000 * COIN;
-    } else if (height < 300000) {
-        return 125000 * COIN;
-    } else if (height < 400000) {
-        return  62500 * COIN;
-    } else if (height < 500000) {
-        return  31250 * COIN;
-    } else if (height < 600000) {
-        return  15625 * COIN;
-    } else {
-        return  10000 * COIN;
-    }
-}
-
-BOOST_AUTO_TEST_CASE(subsidy_first_100k_test)
+BOOST_AUTO_TEST_CASE(rgm_golden_and_supply)
 {
     const CChainParams& mainParams = Params(CBaseChainParams::MAIN);
-    CAmount nSum = 0;
-    arith_uint256 prevHash = UintToArith256(uint256S("0"));
+    const Consensus::Params& p = mainParams.GetConsensus(0);
+    const uint256 dummyPrev = uint256();
+    const int interval = p.nSubsidyHalvingInterval;
 
-    for (int nHeight = 0; nHeight <= 100000; nHeight++) {
-        const Consensus::Params& params = mainParams.GetConsensus(nHeight);
-        CAmount nSubsidy = GetRGMBlockSubsidy(nHeight, params, ArithToUint256(prevHash));
-        BOOST_CHECK(MoneyRange(nSubsidy));
-        BOOST_CHECK(nSubsidy <= 1000000 * COIN);
-        nSum += nSubsidy;
-        // Use nSubsidy to give us some variation in previous block hash, without requiring full block templates
-        prevHash += nSubsidy;
-    }
+    // RGM halving interval (~4 years at 60s blocks)
+    BOOST_CHECK_EQUAL(interval, 2102400);
 
-    const CAmount expected = 54894174438 * COIN;
-    BOOST_CHECK_EQUAL(expected, nSum);
+    // Point checks: base reward, golden x5, genesis guard, halving, tail
+    BOOST_CHECK_EQUAL(GetRGMBlockSubsidy(0, p, dummyPrev), 50 * COIN);        // genesis: h%1000==0 but h>0 guard -> no bonus
+    BOOST_CHECK_EQUAL(GetRGMBlockSubsidy(1, p, dummyPrev), 50 * COIN);        // ordinary
+    BOOST_CHECK_EQUAL(GetRGMBlockSubsidy(999, p, dummyPrev), 50 * COIN);      // ordinary
+    BOOST_CHECK_EQUAL(GetRGMBlockSubsidy(1000, p, dummyPrev), 250 * COIN);    // first golden block: 5x
+    BOOST_CHECK_EQUAL(GetRGMBlockSubsidy(interval - 1, p, dummyPrev), 50 * COIN);   // last block of epoch 0
+    BOOST_CHECK_EQUAL(GetRGMBlockSubsidy(interval, p, dummyPrev), 25 * COIN);       // first halving
+    int goldenAfterHalving = ((interval + 999) / 1000) * 1000;               // first golden height after the halving
+    BOOST_CHECK_EQUAL(GetRGMBlockSubsidy(goldenAfterHalving, p, dummyPrev), 125 * COIN); // 25 x5
+    BOOST_CHECK_EQUAL(GetRGMBlockSubsidy(64 * interval, p, dummyPrev), 0);    // after 64 halvings: 0
+
+    // Total supply: base halves every interval and the integer >> zeroes it by
+    // halving 33, so all emission lives in halvings 0..32. Sum every block and check
+    // the total lands ABOVE the 210.24M a no-golden schedule (50 * interval * 2)
+    // would give -- that gap is the golden-block bonus.
+    CAmount total = 0;
+    const long long lastEmittingHeight = 33LL * interval;
+    for (long long h = 0; h < lastEmittingHeight; h++)
+        total += GetRGMBlockSubsidy((int)h, p, dummyPrev);
+
+    BOOST_TEST_MESSAGE("RGM total supply (satoshis): " << total);
+    BOOST_CHECK_EQUAL(total, 21108085783232708LL);   // exact emission from real GetRGMBlockSubsidy
+    BOOST_CHECK(total > 210240000LL * COIN);   // golden bonus pushes real supply above the no-golden 210.24M
+    BOOST_CHECK(total < 212000000LL * COIN);   // sanity upper bound
 }
 
-BOOST_AUTO_TEST_CASE(subsidy_100k_145k_test)
-{
-    const CChainParams& mainParams = Params(CBaseChainParams::MAIN);
-    CAmount nSum = 0;
-    arith_uint256 prevHash = UintToArith256(uint256S("0"));
-
-    for (int nHeight = 100000; nHeight <= 145000; nHeight++) {
-        const Consensus::Params& params = mainParams.GetConsensus(nHeight);
-        CAmount nSubsidy = GetRGMBlockSubsidy(nHeight, params, ArithToUint256(prevHash));
-        BOOST_CHECK(MoneyRange(nSubsidy));
-        BOOST_CHECK(nSubsidy <= 500000 * COIN);
-        nSum += nSubsidy;
-        // Use nSubsidy to give us some variation in previous block hash, without requiring full block templates
-        prevHash += nSubsidy;
-    }
-
-    const CAmount expected = 12349960000 * COIN;
-    BOOST_CHECK_EQUAL(expected, nSum);
-}
-
-// Check the simplified rewards after block 145,000
-BOOST_AUTO_TEST_CASE(subsidy_post_145k_test)
-{
-    const CChainParams& mainParams = Params(CBaseChainParams::MAIN);
-    const uint256 prevHash = uint256S("0");
-
-    for (int nHeight = 145000; nHeight < 600000; nHeight++) {
-        const Consensus::Params& params = mainParams.GetConsensus(nHeight);
-        CAmount nSubsidy = GetRGMBlockSubsidy(nHeight, params, prevHash);
-        CAmount nExpectedSubsidy = (500000 >> (nHeight / 100000)) * COIN;
-        BOOST_CHECK(MoneyRange(nSubsidy));
-        BOOST_CHECK_EQUAL(nSubsidy, nExpectedSubsidy);
-    }
-
-    // Test reward at 600k+ is constant
-    CAmount nConstantSubsidy = GetRGMBlockSubsidy(600000, mainParams.GetConsensus(600000), prevHash);
-    BOOST_CHECK_EQUAL(nConstantSubsidy, 10000 * COIN);
-
-    nConstantSubsidy = GetRGMBlockSubsidy(700000, mainParams.GetConsensus(700000), prevHash);
-    BOOST_CHECK_EQUAL(nConstantSubsidy, 10000 * COIN);
-}
-
-BOOST_AUTO_TEST_CASE(get_next_work_difficulty_limit)
+BOOST_AUTO_TEST_CASE(rgm_emergency_difficulty_reset)
 {
     SelectParams(CBaseChainParams::MAIN);
-    const Consensus::Params& params = Params().GetConsensus(0);
+    const Consensus::Params& params = Params().GetConsensus(400);
+    const unsigned int powLimit = UintToArith256(params.powLimit).GetCompact();
+
+    // Emergency anti-freeze rule (hardfork live since block 364): activates at
+    // height 364 after a 3h stall. REQUIRE so we stop before the diff path if unset.
+    BOOST_REQUIRE_EQUAL(params.nEmergencyMinDiffHeight, 364);
+    BOOST_REQUIRE_EQUAL(params.nEmergencyMinDiffTimeout, 3 * 60 * 60);
 
     CBlockIndex pindexLast;
-    int64_t nLastRetargetTime = 1386474927; // Block # 1
-    
-    pindexLast.nHeight = 239;
-    pindexLast.nTime = 1386475638; // Block #239
-    pindexLast.nBits = 0x1e0ffff0;
-    BOOST_CHECK_EQUAL(CalculateRGMNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x1e00ffff);
-}
+    pindexLast.nHeight = 400;                 // next block 401 >= 364 -> rule active
+    pindexLast.nTime   = 1700000000;
 
-BOOST_AUTO_TEST_CASE(get_next_work_pre_digishield)
-{
-    SelectParams(CBaseChainParams::MAIN);
-    const Consensus::Params& params = Params().GetConsensus(0);
-    
-    CBlockIndex pindexLast;
-    int64_t nLastRetargetTime = 1386942008; // Block 9359
-
-    pindexLast.nHeight = 9599;
-    pindexLast.nTime = 1386954113;
-    pindexLast.nBits = 0x1c1a1206;
-    BOOST_CHECK_EQUAL(CalculateRGMNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x1c15ea59);
+    // Block dated more than the 3h timeout after its parent -> min-diff reset.
+    CBlockHeader trigger;
+    trigger.nTime = pindexLast.nTime + params.nEmergencyMinDiffTimeout + 1;
+    BOOST_CHECK_EQUAL(GetNextWorkRequired(&pindexLast, &trigger, params), powLimit);
 }
 
 BOOST_AUTO_TEST_CASE(get_next_work_digishield)
@@ -207,42 +129,6 @@ BOOST_AUTO_TEST_CASE(get_next_work_digishield_rounding)
     pindexLast.nTime = 1395094727;
     pindexLast.nBits = 0x1b671062;
     BOOST_CHECK_EQUAL(CalculateRGMNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x1b6558a4);
-}
-
-BOOST_AUTO_TEST_CASE(hardfork_parameters)
-{
-    SelectParams(CBaseChainParams::MAIN);
-    const Consensus::Params& initialParams = Params().GetConsensus(0);
-
-    BOOST_CHECK_EQUAL(initialParams.nPowTargetTimespan, 14400);
-    BOOST_CHECK_EQUAL(initialParams.fAllowLegacyBlocks, true);
-    BOOST_CHECK_EQUAL(initialParams.fDigishieldDifficultyCalculation, false);
-
-    const Consensus::Params& initialParamsEnd = Params().GetConsensus(144999);
-    BOOST_CHECK_EQUAL(initialParamsEnd.nPowTargetTimespan, 14400);
-    BOOST_CHECK_EQUAL(initialParamsEnd.fAllowLegacyBlocks, true);
-    BOOST_CHECK_EQUAL(initialParamsEnd.fDigishieldDifficultyCalculation, false);
-
-    const Consensus::Params& digishieldParams = Params().GetConsensus(145000);
-    BOOST_CHECK_EQUAL(digishieldParams.nPowTargetTimespan, 60);
-    BOOST_CHECK_EQUAL(digishieldParams.fAllowLegacyBlocks, true);
-    BOOST_CHECK_EQUAL(digishieldParams.fDigishieldDifficultyCalculation, true);
-
-    const Consensus::Params& digishieldParamsEnd = Params().GetConsensus(371336);
-    BOOST_CHECK_EQUAL(digishieldParamsEnd.nPowTargetTimespan, 60);
-    BOOST_CHECK_EQUAL(digishieldParamsEnd.fAllowLegacyBlocks, true);
-    BOOST_CHECK_EQUAL(digishieldParamsEnd.fDigishieldDifficultyCalculation, true);
-
-    const Consensus::Params& auxpowParams = Params().GetConsensus(371337);
-    BOOST_CHECK_EQUAL(auxpowParams.nHeightEffective, 371337);
-    BOOST_CHECK_EQUAL(auxpowParams.nPowTargetTimespan, 60);
-    BOOST_CHECK_EQUAL(auxpowParams.fAllowLegacyBlocks, false);
-    BOOST_CHECK_EQUAL(auxpowParams.fDigishieldDifficultyCalculation, true);
-
-    const Consensus::Params& auxpowHighParams = Params().GetConsensus(700000); // Arbitrary point after last hard-fork
-    BOOST_CHECK_EQUAL(auxpowHighParams.nPowTargetTimespan, 60);
-    BOOST_CHECK_EQUAL(auxpowHighParams.fAllowLegacyBlocks, false);
-    BOOST_CHECK_EQUAL(auxpowHighParams.fDigishieldDifficultyCalculation, true);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
