@@ -1354,6 +1354,19 @@ bool TransactionSignatureChecker::CheckSequence(const CScriptNum& nSequence) con
     return true;
 }
 
+// RGM post-quantum (witness v2, ML-DSA-44) sighash.
+// scriptCode is intentionally left empty and the hashtype is fixed to SIGHASH_ALL.
+// This is safe for the PQ spend path:
+//  1. Key<->address binding is enforced in VerifyWitnessProgram (witversion==2):
+//     HASH160(pq_pubkey) must equal the 20-byte witness program before the
+//     signature is checked, so a spender cannot substitute a different key.
+//     scriptCode's usual role (committing to the key) is therefore already covered.
+//  2. The PQ path has no arbitrary witnessScript (unlike P2WSH) - it is a single
+//     fixed verification, so scriptCode has nothing variable to commit to.
+//  3. BIP143 (SIGVERSION_WITNESS_V0) + SIGHASH_ALL commits to all input prevouts,
+//     this input's outpoint and amount, all outputs, nSequence and nLockTime -
+//     binding the signature to the whole transaction and this exact input.
+//     Fixing SIGHASH_ALL also avoids SINGLE/NONE/ANYONECANPAY malleability.
 uint256 TransactionSignatureChecker::GetSigHash() const
 {
     CScript scriptCode;
